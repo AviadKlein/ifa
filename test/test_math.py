@@ -84,6 +84,15 @@ class TestMath(TestCase):
         self.assertTrue(objective(-0.1, y, p, np.ones(3)) > ce_result)
         self.assertTrue(objective(0.1, y, p, np.ones(3)) < ce_result)
 
+    def test_minimizer(self):
+        y = np.array([0, 1, 1])
+        p = np.array([0.1, 0.3, 0.3])
+        result = minimize_ce_with_1param(p, y, np.ones(3))
+        orig = ce(p, y, np.ones(3))
+        minima = objective(result, y, p, np.ones(3))
+        self.assertTrue(minima < orig)
+
+
 
         
 
