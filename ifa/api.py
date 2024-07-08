@@ -10,7 +10,7 @@ from ifa.segmentor import *
 from ifa.ci import *
 
 
-def plot_result(result: pd.DataFrame, x_col: str,
+def plot_result(result: pd.DataFrame, x_col: Optional[str]=None,
                 y_axis: str='bias',
                 figsize: Tuple[int, int]=(10, 4),
                 width_ratios: Tuple[int, int]=(1, 10),
@@ -53,7 +53,7 @@ def plot_result(result: pd.DataFrame, x_col: str,
     ax[1].axhline(0, linestyle='--', color='gray')
     ax[1].scatter(result.loc[~null_msk, 'x_mid'], _y_axis[~null_msk], color=color, s=8)
     ax[1].vlines(result.loc[~null_msk, 'x_mid'], ymin=ymin[~null_msk], ymax=ymax[~null_msk], color=color)
-    ax[1].set_xlabel(x_col)
+    ax[1].set_xlabel(x_col if x_col is not None else 'x')
 
     # categorical values
     if 'x_cat' in result.columns:
