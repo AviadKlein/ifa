@@ -8,45 +8,7 @@ from numpy.random import RandomState
 
 from ifa.api import *
 from ifa.math import sigmoid
-
-def model_samples(n: int, beta: Union[int, np.ndarray], seed: Union[int, RandomState]=556342):
-    """creates n random instances based on beta"""
-    assert n > 0
-
-    # resolve beta
-    if isinstance(beta, int):
-        beta = np.random.uniform(-1, 1, size=beta)
-    elif isinstance(beta, np.ndarray):
-        assert beta.size == beta.shape[0]
-    else:
-        raise TypeError()
-    
-    # resolve random state
-    if isinstance(seed, int):
-        rs = RandomState(seed)
-    elif isinstance(seed, RandomState):
-        rs = seed
-    else:
-        raise TypeError()
-        
-    p = beta.size
-
-    x = rs.uniform(low=-1, high=1, size=(n, p))
-    
-    xb = x.dot(beta)
-    p = sigmoid(xb)
-    y = rs.binomial(1, p)
-    
-    return x, y, beta
-
-def crossentropy_loss(x, X, y):
-    mu = X.dot(x)
-    y_hat = sigmoid(mu)
-    return -(y*np.log(y_hat) + (1-y)*np.log(1-y_hat)).mean()
-
-def fit_logistic_regression(X, y):
-    opt = minimize(crossentropy_loss, np.zeros(X.shape[1]), (X, y))
-    return opt['x']
+from ifa.demo import model_samples, fit_logistic_regression
 
 
 class TestApi(TestCase):

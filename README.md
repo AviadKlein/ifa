@@ -4,7 +4,103 @@ The IFA tool is used to find if a feature has incremental predictive power over 
 
 The IFA Tool does not assume any relationship between the contesting feature and the performance. Rather, we segment the feature using an arbitrary segmentor and observe the model error in local "neighborhoods" defined by the segmentor and use visual judgement to determine what pre-processing, if any, the feature will require.
 
-## 1. Scope of this doc
+## 1. Usage
+
+### 1.1 Installation
+
+```
+pip install ak-ifa
+```
+requirements are listed in the `requirements.txt` file
+
+### 1.2 General usage
+
+Given a dataframe with at least:
+- 1 column of labels {0,1} or any values in the range (0,1), called 'y' in the example
+- 1 column of predictions as probabilities in the range (0,1), called 'p' in the example
+- 1 column of a candidate continuous feature, called 'x' in the example
+
+```python
+from ifa.api import *
+
+result, _ = analyze_feature(df, x_col='x', p_col='p', y_col='y', plot=True)
+```
+
+Will plot a graphical test for the added information of the feature 'x' over the prediction 'p'.
+
+### 1.3 Demo of feature with added information
+
+To ease learning, we have provided a demo module with some helper functions
+
+```python
+import numpy as np
+import pandas as pd
+
+from ifa.api import *
+from ifa.demo import model_samples, fit_logistic_regression
+from ifa.math import sigmoid
+
+# assume linear coefficients of a logistic regression model
+beta = np.array([1, -1, 2, -2])
+
+# create model samples based of coefficients (see math below)
+X, y, _ = model_samples(10000, beta, seed=42)
+
+# fit a model on part of the features
+X_partial = X[:,:3]
+beta_hat_partial = fit_logistic_regression(X_partial, y)
+print(beta_hat_partial) # [ 0.78434972 -0.79164423  1.61375143], values might depend on RandomState's impl.
+
+y_hat_partial = sigmoid(X_partial.dot(beta_hat_partial))
+
+df_partial = pd.DataFrame({
+    'x':X[:,3], # the 'missing' feature
+    'y': y,
+    'y_hat': y_hat_partial
+    })
+
+result, _ = analyze_feature(df_partial, x_col='x', p_col='y_hat', y_col='y', plot=True)
+```
+
+![alt text](/readme_images/example%20with%20information.png)
+
+
+### 1.4 Demo of feature without added information
+
+```python
+import numpy as np
+import pandas as pd
+
+from ifa.api import *
+from ifa.demo import model_samples, fit_logistic_regression
+from ifa.math import sigmoid
+
+# assume linear coefficients of a logistic regression model
+beta = np.array([1, -1, 2, -2])
+
+# create model samples based of coefficients (see math below)
+n = 10000
+X, y, _ = model_samples(n, beta, seed=42)
+
+# fit a model on all features
+beta_hat = fit_logistic_regression(X, y)
+
+y_hat = sigmoid(X.dot(beta_hat))
+
+df = pd.DataFrame({
+    'x':np.random.uniform(-1,1,n), # the 'missing' feature, this time with no information
+    'y': y,
+    'y_hat': y_hat
+    })
+
+result, _ = analyze_feature(df, x_col='x', p_col='y_hat', y_col='y', plot=True)
+```
+
+![alt text](/readme_images/example%20without%20information.png)
+
+
+
+## 2. Scope of this doc
 
 When using the CT to find sloping features for a production model we should follow these steps:
 1. Use the tool to determine if the feature can improve the model.
@@ -14,15 +110,15 @@ When using the CT to find sloping features for a production model we should foll
 
 In this doc, we will cover steps 1, 4. we will also cover some mathematical properties of CT through simulation.
 
-## 2. Definition
+## 3. Definition
 
-### 2.1 CT Constraints
+### 3.1 CT Constraints
 
 - CT's Feature analysis can be used with any probability generating model. 
 - CT can operate with any real or categorical feature.
 - The suggested correction can also be used for any probability generating model, but would fit very nicely and linearly with Logistic Models.
 
-### 2.2 Notation
+### 3.2 Notation
 
 Let:
 
@@ -47,7 +143,7 @@ Define $m_i$ the local weighted mean of all $x_k$ in $g_i$:<br>
 
 $$m_i:=\frac{\sum_{k\in g_i}x_k w_k}{\sum_{k\in g_i}w_k}$$
 
-### 2.3 Feature analysis definition
+### 3.3 Feature analysis definition
 
 The rationale behind the feature analysis assumes:
 - Extra features should tested 'above' or 'given' the model.
@@ -85,7 +181,7 @@ Define $\delta_i:= \underset{a}{\text{argmin}}\ L_i(a)$
 
 Plot the pairs: $(m_i, \delta_i)$ and observe the visual relationship.
 
-### 2.4 A linear feature example
+### 3.4 A linear feature example
 
 The procedure is as follows:
 
@@ -102,15 +198,8 @@ The procedure is as follows:
 Learn a partial model $m'$ by omitting 1 feature $x_j$ from $\mathbf{x}$. Let $s'$ denote the score of $m'$
 Run the contribution tool over the data set $\{(s'_k, x_{j,k}, y_k)\}_{k=1}^N$
 
-Below is a result of a feature that adds information:
 
-![alt text](/readme_images/example%20with%20information.png)
-
-And now an example without information:
-
-![alt text](/readme_images/example%20without%20information.png)
-
-## 3. Adding a feature to the model
+## 4. Adding a feature to the model
 
 Once we agree with the definition of the feature (we might want to perfrom some pre-processing) we would like to update the model's separation hyperplane with an additional coordinate. To do so we keep the separation hyperplane constant and only allow a new slope and bias to be learned.
 
