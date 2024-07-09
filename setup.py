@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ak_ifa",  
-    version="0.1.0",
+    version="0.1.1",
     author="Aviad Klein",
     author_email="aviad.klein@gmail.com",
     description="Incremental Feature Analysis Tool",
